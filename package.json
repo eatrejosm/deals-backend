@@ -13,10 +13,12 @@
   "dependencies": {
     "@aws-sdk/util-dynamodb": "^3.662.0",
     "aws-sdk": "^2.1691.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.7.4",
     "ts-node-dev": "^2.0.0",

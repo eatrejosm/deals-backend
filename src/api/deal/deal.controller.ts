@@ -1,20 +1,71 @@
 import { Request, Response } from 'express';
-import DealService from './deal.service';
+import { dynamoDbClient } from '../../lib/dynamoDb';
 
 class DealController {
-  dealService: DealService;
+  tableName: string = 'Deals';
+
   constructor() {
-    this.dealService = new DealService();
+    this.tableName = 'Deals';
   }
-  async findById(req: Request, res: Response) {
+
+  // Using arrow function to maintain the context of 'this'
+  findById = async (req: Request, res: Response): Promise<void> => {
     const id = req.query.id as string;
-    const data = await this.dealService.findById(id);
-    res.status(200).json(data);
-  }
-  async create(req: Request, res: Response) {
-    const data = await this.dealService.create(req.body);
-    res.status(200).json(data);
-  }
+    try {
+      const data = await dynamoDbClient
+        .get({
+          TableName: this.tableName,
+          Key: {
+            id: { S: id },
+          },
+        })
+        .promise();
+
+      if (data.Item) {
+        res.status(200).json(data.Item);
+      } else {
+        res.status(404).json({ message: 'Deal not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching the deal' });
+    }
+  };
+
+  search = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const response = await dynamoDbClient
+        .scan({
+          TableName: this.tableName,
+        })
+        .promise();
+
+      res.status(200).json(response.Items);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'Error fetching deals' });
+    }
+  };
+
+  create = async (req: Request, res: Response): Promise<void> => {
+    const { id, name, value } = req.body;
+
+    try {
+      await dynamoDbClient
+        .put({
+          TableName: this.tableName,
+          Item: {
+            id: { S: id },
+            name: { S: name },
+            value: { N: value.toString() },
+          },
+        })
+        .promise();
+
+      res.status(201).json({ message: 'Deal created successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Error creating the deal' });
+    }
+  };
 }
 
 const dealController = new DealController();
